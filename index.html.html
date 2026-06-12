@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Urlopy — ON-ARCH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:       #a05c5c;
+      --brand-dark:  #7d3f3f;
+      --brand-light: #f5edec;
+      --brand-mid:   #c49090;
+      --text:        #1c1c1c;
+      --text-muted:  #9a9290;
+      --border:      #e8e0db;
+      --border-soft: #f0e8e4;
+      --surface:     #ffffff;
+      --surface-2:   #faf6f3;
+      --bg:          #f4f0ed;
+    }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN ── */
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-box {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+    .login-logo { margin-bottom: 28px; }
+    .login-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .login-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      margin-bottom: 12px;
+      letter-spacing: 2px;
+    }
+    .login-box input:focus { border-color: var(--brand-mid); background: var(--surface); }
+    .login-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--brand-dark);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .login-btn:hover { opacity: 0.88; }
+    .login-error {
+      font-size: 12px;
+      color: var(--brand);
+      margin-top: 10px;
+    }
+
+    /* ── SHELL ── */
+    .shell { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 0.5px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .sidebar-logo {
+      padding: 22px 20px 18px;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .sidebar-role {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: left;
+      width: 100%;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { background: var(--brand-light); color: var(--brand-dark); font-weight: 700; }
+    .nav-item svg { flex-shrink: 0; }
+    .sidebar-footer {
+      padding: 14px 20px;
+      border-top: 0.5px solid var(--border);
+    }
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Lato', sans-serif;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 0;
+      transition: color 0.12s;
+    }
+    .logout-btn:hover { color: var(--brand); }
+
+    /* ── CONTENT ── */
+    .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .page-header {
+      padding: 20px 32px 16px;
+      border-bottom: 0.5px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--brand-dark);
+    }
+    .main { padding: 28px 32px 60px; max-width: 1100px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 16px;
+    }
+
+    /* ── FORM ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 9px;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--brand-mid); background: var(--surface); }
+    .btn-brand {
+      padding: 9px 20px;
+      background: var(--brand-dark);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.15s;
+    }
+    .btn-brand:hover { opacity: 0.88; }
+    .btn-ghost {
+      padding: 8px 16px;
+      background: none;
+      border: 0.5px solid var(--border);
+      border-radius: 9px;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .btn-ghost:hover { border-color: var(--brand-mid); color: var(--text); }
+    .form-msg { font-size: 12px; color: var(--brand-dark); margin-top: 10px; }
+
+    /* ── CALENDAR ── */
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .cal-month {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text);
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .cal-dow {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 5px 0 8px;
+    }
+    .cal-day {
+      min-height: 78px;
+      border-radius: 10px;
+      padding: 5px 6px;
+      border: 0.5px solid var(--border-soft);
+      background: var(--surface);
+      vertical-align: top;
+    }
+    .cal-day.other { background: var(--bg); opacity: 0.45; }
+    .cal-day.today { border-color: var(--brand-mid); }
+    .cal-day-num {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+    .cal-day.today .cal-day-num { color: var(--brand-dark); font-weight: 700; }
+    .cal-event {
+      font-size: 10px;
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: default;
+      line-height: 1.6;
+    }
+
+    /* ── LEGEND ── */
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── LIST ── */
+    .entry-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .entry-row:last-child { border-bottom: none; }
+    .entry-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .entry-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .entry-type {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--brand-light);
+      color: var(--brand-dark);
+    }
+    .del-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--border);
+      font-size: 18px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: color 0.12s;
+    }
+    .del-btn:hover { color: var(--brand); }
+
+    /* ── SUMMARY TABLE ── */
+    .summary-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .metric {
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .metric-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .metric-val { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 400; color: var(--brand-dark); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 0.5px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 0.5px solid var(--border-soft); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── WORKERS ── */
+    .worker-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .worker-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .worker-chip button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      opacity: 0.5;
+    }
+    .worker-chip button:hover { opacity: 1; }
+    .add-row { display: flex; gap: 8px; align-items: center; }
+    .add-row input { flex: 1; margin-bottom: 0; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .filter-bar select { width: auto; flex: 1; min-width: 140px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--brand-dark);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      white-space: nowrap;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── LOADER ── */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-size: 13px;
+      gap: 10px;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Worker color palette */
+    .wc0 { background: #ede9fb; color: #3d2f8f; }
+    .wc1 { background: #d6f4ec; color: #0a4f36; }
+    .wc2 { background: #fdecd3; color: #6b3a0a; }
+    .wc3 { background: #fde0ea; color: #7a1a3a; }
+    .wc4 { background: #daeaf9; color: #0a3560; }
+    .wc5 { background: #e2f4c8; color: #1e4d06; }
+    .wc6 { background: #fdd8c8; color: #5a1a08; }
+    .wc7 { background: #e8e6e0; color: #2c2c28; }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .page-header { padding: 14px 16px; }
+      .main { padding: 16px 16px 80px; }
+      .form-row { grid-template-columns: 1fr; }
+      .form-row-3 { grid-template-columns: 1fr; }
+      .mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--surface);
+        border-top: 0.5px solid var(--border);
+        display: flex;
+        z-index: 100;
+      }
+      .mobile-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 8px 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Lato', sans-serif;
+        font-size: 10px;
+        color: var(--text-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: color 0.12s;
+      }
+      .mobile-nav-item.active { color: var(--brand-dark); }
+    }
+    @media (min-width: 769px) { .mobile-nav { display: none !important; } }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="140" height="27" viewBox="0 0 420 80" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(80,40)">
+          <circle cx="22" cy="0" r="22" fill="none" stroke="#7d3f3f" stroke-width="1.8"/>
+          <path d="M56 0 A22 22 0 0 1 100 0" fill="none" stroke="#7d3f3f" stroke-width="1.8"/>
+          <text x="116" y="16" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="200" font-size="48" letter-spacing="4" fill="#7d3f3f">ARCH</text>
+        </g>
+      </svg>
+    </div>
+    <div class="login-title">Panel urlopowy</div>
+    <div class="login-sub">Zaloguj się jako administrator</div>
+    <input type="password" id="passwordInput" placeholder="Hasło" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="login-btn" onclick="doLogin()">Zaloguj się</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div class="shell" id="appShell" style="display:none">
+
+  <!-- SIDEBAR (desktop) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="110" height="21" viewBox="0 0 420 80" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(80,40)">
+          <circle cx="22" cy="0" r="22" fill="none" stroke="#7d3f3f" stroke-width="1.8"/>
+          <path d="M56 0 A22 22 0 0 1 100 0" fill="none" stroke="#7d3f3f" stroke-width="1.8"/>
+          <text x="116" y="16" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-weight="200" font-size="48" letter-spacing="4" fill="#7d3f3f">ARCH</text>
+        </g>
+      </svg>
+      <div class="sidebar-role">Admin — urlopy</div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPage('calendar')" id="nav-calendar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Kalendarz
+      </button>
+      <button class="nav-item" onclick="showPage('add')" id="nav-add">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Dodaj urlop
+      </button>
+      <button class="nav-item" onclick="showPage('list')" id="nav-list">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor"/></svg>
+        Lista
+      </button>
+      <button class="nav-item" onclick="showPage('summary')" id="nav-summary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg>
+        Podsumowanie
+      </button>
+      <button class="nav-item" onclick="showPage('workers')" id="nav-workers">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M17 11l2 2 4-4" stroke-width="1.8"/></svg>
+        Pracownicy
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="doLogout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Wyloguj
+      </button>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="page-header">
+      <div class="page-title" id="pageTitle">Kalendarz urlopów</div>
+      <div id="headerActions"></div>
+    </div>
+    <div class="main" id="mainContent">
+      <div class="loader"><div class="spinner"></div>Ładowanie…</div>
+    </div>
+  </div>
+
+  <!-- MOBILE NAV -->
+  <nav class="mobile-nav">
+    <button class="mobile-nav-item active" onclick="showPage('calendar')" id="mnav-calendar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Kalendarz
+    </button>
+    <button class="mobile-nav-item" onclick="showPage('add')" id="mnav-add">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Dodaj
+    </button>
+    <button class="mobile-nav-item" onclick="showPage('list')" id="mnav-list">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor"/></svg>
+      Lista
+    </button>
+    <button class="mobile-nav-item" onclick="showPage('workers')" id="mnav-workers">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+      Pracownicy
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://jglkieodgghkenbphzld.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnbGtpZW9kZ2doa2VuYnBoemxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjAwOTEsImV4cCI6MjA5Njc5NjA5MX0.vLcDUDfwb28DuYbArAzXWIR1m1uXp0tjdJKtmtn98jE';
+const ADMIN_PASS = '123urlop';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MONTHS = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const DOWS = ['Pon','Wt','Śr','Czw','Pt','Sob','Nie'];
+const TYPES = ['Wypoczynkowy','Na żądanie','Chorobowy','Opieka nad dzieckiem'];
+const WCOLORS = ['#c2bbed','#97d9c5','#f9cfa0','#f5b0c8','#a8d1f2','#c8e89a','#f6bda4','#ccc9bf'];
+const WTEXT   = ['#3d2f8f','#0a4f36','#6b3a0a','#7a1a3a','#0a3560','#1e4d06','#5a1a08','#2c2c28'];
+
+let workers = [];
+let entries = [];
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let currentPage = 'calendar';
+
+// ── AUTH ──
+function doLogin() {
+  const val = document.getElementById('passwordInput').value;
+  if (val === ADMIN_PASS) {
+    sessionStorage.setItem('oa_auth', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'flex';
+    init();
+  } else {
+    document.getElementById('loginError').textContent = 'Nieprawidłowe hasło.';
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem('oa_auth');
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('passwordInput').value = '';
+}
+
+// ── INIT ──
+async function init() {
+  await Promise.all([loadWorkers(), loadEntries()]);
+  showPage('calendar');
+}
+
+async function loadWorkers() {
+  const { data } = await sb.from('urlopy_pracownicy').select('*').order('nazwa');
+  workers = data || [];
+}
+async function loadEntries() {
+  const { data } = await sb.from('urlopy_wpisy').select('*').order('data_od');
+  entries = data || [];
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── NAVIGATION ──
+function showPage(page) {
+  currentPage = page;
+  const titles = { calendar: 'Kalendarz urlopów', add: 'Dodaj urlop', list: 'Lista urlopów', summary: 'Podsumowanie', workers: 'Pracownicy' };
+  document.getElementById('pageTitle').textContent = titles[page];
+  document.getElementById('headerActions').innerHTML = page === 'list'
+    ? `<button class="btn-ghost" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Eksport CSV</button>`
+    : '';
+  ['calendar','add','list','summary','workers'].forEach(p => {
+    document.getElementById('nav-'+p)?.classList.toggle('active', p === page);
+    document.getElementById('mnav-'+p)?.classList.toggle('active', p === page);
+  });
+  const pages = { calendar: renderCalendar, add: renderAdd, list: renderList, summary: renderSummary, workers: renderWorkers };
+  pages[page]();
+}
+
+// ── HELPERS ──
+function wIdx(workerName) { return workers.findIndex(w => w.nazwa === workerName); }
+function wColor(name) { const i = wIdx(name); return i >= 0 ? WCOLORS[i % 8] : '#e8e0db'; }
+function wTextColor(name) { const i = wIdx(name); return i >= 0 ? WTEXT[i % 8] : '#5a5a5a'; }
+function fmt(d) { if (!d) return ''; const [y,m,dd] = d.split('-'); return `${dd}.${m}.${y}`; }
+function workdays(from, to) {
+  let c = 0, d = new Date(from), e = new Date(to);
+  while (d <= e) { const wd = d.getDay(); if (wd !== 0 && wd !== 6) c++; d.setDate(d.getDate()+1); }
+  return c;
+}
+function dateRange(from, to) {
+  const days = []; let d = new Date(from), e = new Date(to);
+  while (d <= e) { days.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+  return days;
+}
+
+// ── CALENDAR ──
+function renderCalendar() {
+  const todayStr = new Date().toISOString().slice(0,10);
+  const dayMap = {};
+  entries.forEach(e => {
+    dateRange(e.data_od, e.data_do).forEach(d => {
+      if (!dayMap[d]) dayMap[d] = [];
+      dayMap[d].push(e);
+    });
+  });
+  const firstDay = new Date(calYear, calMonth, 1);
+  let startDow = firstDay.getDay(); startDow = startDow === 0 ? 6 : startDow - 1;
+  const dim = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDim = new Date(calYear, calMonth, 0).getDate();
+
+  const legendHtml = workers.map(w =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${wColor(w.nazwa)}"></span>${w.nazwa}</span>`
+  ).join('');
+
+  let gridHtml = DOWS.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for (let i = startDow-1; i >= 0; i--)
+    gridHtml += `<div class="cal-day other"><div class="cal-day-num">${prevDim-i}</div></div>`;
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = ds === todayStr;
+    const evs = dayMap[ds] || [];
+    const evHtml = evs.slice(0,3).map(e =>
+      `<div class="cal-event" style="background:${wColor(e.pracownik)};color:${wTextColor(e.pracownik)}" title="${e.pracownik} — ${e.typ}">${e.pracownik.split(' ')[0]}</div>`
+    ).join('') + (evs.length > 3 ? `<div style="font-size:9px;color:var(--text-muted)">+${evs.length-3}</div>` : '');
+    gridHtml += `<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${evHtml}</div>`;
+  }
+  const total = startDow + dim;
+  for (let d = 1; d <= (total % 7 === 0 ? 0 : 7 - total % 7); d++)
+    gridHtml += `<div class="cal-day other"><div class="cal-day-num">${d}</div></div>`;
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="cal-nav">
+      <button class="btn-ghost" onclick="changeMonth(-1)">← Poprzedni</button>
+      <span class="cal-month">${MONTHS[calMonth]} ${calYear}</span>
+      <button class="btn-ghost" onclick="changeMonth(1)">Następny →</button>
+    </div>
+    <div class="legend">${legendHtml}</div>
+    <div class="cal-grid">${gridHtml}</div>`;
+}
+
+function changeMonth(d) {
+  calMonth += d;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+// ── ADD ──
+function renderAdd() {
+  const workerOpts = workers.map(w => `<option>${w.nazwa}</option>`).join('');
+  const typeOpts = TYPES.map(t => `<option>${t}</option>`).join('');
+  document.getElementById('mainContent').innerHTML = `
+    <div class="card">
+      <div class="card-title">Nowy urlop</div>
+      <div class="form-row">
+        <div class="form-group"><label>Pracownik</label><select id="f-worker">${workerOpts}</select></div>
+        <div class="form-group"><label>Typ urlopu</label><select id="f-type">${typeOpts}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Od</label><input type="date" id="f-from" /></div>
+        <div class="form-group"><label>Do</label><input type="date" id="f-to" /></div>
+      </div>
+      <button class="btn-brand" onclick="addEntry()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Dodaj urlop
+      </button>
+      <div class="form-msg" id="formMsg"></div>
+    </div>`;
+}
+
+async function addEntry() {
+  const worker = document.getElementById('f-worker').value;
+  const type = document.getElementById('f-type').value;
+  const from = document.getElementById('f-from').value;
+  const to = document.getElementById('f-to').value;
+  const msg = document.getElementById('formMsg');
+  if (!worker || !from || !to) { msg.textContent = 'Uzupełnij wszystkie pola.'; return; }
+  if (from > to) { msg.textContent = 'Data końca nie może być wcześniej niż data początku.'; return; }
+  msg.textContent = 'Zapisywanie…';
+  const { error } = await sb.from('urlopy_wpisy').insert({ pracownik: worker, typ: type, data_od: from, data_do: to });
+  if (error) { msg.textContent = 'Błąd: ' + error.message; return; }
+  await loadEntries();
+  toast(`✓ Dodano urlop: ${worker}, ${fmt(from)} – ${fmt(to)}`);
+  document.getElementById('f-from').value = '';
+  document.getElementById('f-to').value = '';
+  msg.textContent = '';
+}
+
+// ── LIST ──
+function renderList() {
+  const workerOpts = `<option value="">Wszyscy</option>` + workers.map(w => `<option>${w.nazwa}</option>`).join('');
+  const allMonths = [...new Set(entries.map(e => e.data_od.slice(0,7)))].sort();
+  const monthOpts = `<option value="">Wszystkie miesiące</option>` + allMonths.map(m => {
+    const [y, mo] = m.split('-');
+    return `<option value="${m}">${MONTHS[parseInt(mo)-1]} ${y}</option>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="filter-bar">
+      <select id="fw" onchange="filterList()">${workerOpts}</select>
+      <select id="fm" onchange="filterList()">${monthOpts}</select>
+    </div>
+    <div class="card" id="listCard" style="padding: 8px 20px;"></div>`;
+  filterList();
+}
+
+function filterList() {
+  const fw = document.getElementById('fw').value;
+  const fm = document.getElementById('fm').value;
+  const list = entries.filter(e =>
+    (!fw || e.pracownik === fw) &&
+    (!fm || e.data_od.slice(0,7) === fm || e.data_do.slice(0,7) === fm)
+  ).sort((a,b) => a.data_od.localeCompare(b.data_od));
+
+  const card = document.getElementById('listCard');
+  if (!list.length) {
+    card.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:13px">Brak wpisów dla wybranych filtrów</div>`;
+    return;
+  }
+  card.innerHTML = list.map(e => {
+    const days = workdays(e.data_od, e.data_do);
+    return `<div class="entry-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:3px;background:${wColor(e.pracownik)};flex-shrink:0;display:inline-block"></span>
+        <div>
+          <div class="entry-name">${e.pracownik}</div>
+          <div class="entry-meta">${fmt(e.data_od)} – ${fmt(e.data_do)} &nbsp;·&nbsp; ${days} ${days === 1 ? 'dzień' : 'dni'} roboczych</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="entry-type">${e.typ}</span>
+        <button class="del-btn" onclick="deleteEntry(${e.id})" title="Usuń">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Usunąć ten wpis?')) return;
+  await sb.from('urlopy_wpisy').delete().eq('id', id);
+  await loadEntries();
+  toast('Wpis usunięty');
+  renderList();
+}
+
+function exportCSV() {
+  const fw = document.getElementById('fw')?.value || '';
+  const fm = document.getElementById('fm')?.value || '';
+  const list = entries.filter(e =>
+    (!fw || e.pracownik === fw) &&
+    (!fm || e.data_od.slice(0,7) === fm || e.data_do.slice(0,7) === fm)
+  );
+  if (!list.length) { alert('Brak danych do eksportu.'); return; }
+  const rows = [['Pracownik','Typ urlopu','Od','Do','Dni robocze'],
+    ...list.map(e => [e.pracownik, e.typ, fmt(e.data_od), fmt(e.data_do), workdays(e.data_od, e.data_do)])
+  ].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+rows], {type:'text/csv;charset=utf-8'}));
+  a.download = 'urlopy_on_arch.csv'; a.click();
+}
+
+// ── SUMMARY ──
+function renderSummary() {
+  const approved = entries;
+  const totalDays = approved.reduce((s,e) => s + workdays(e.data_od, e.data_do), 0);
+  const thisMonth = approved.filter(e => e.data_od.slice(0,7) === `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`);
+  const rows = workers.map(w => {
+    const we = approved.filter(e => e.pracownik === w.nazwa);
+    const counts = TYPES.map(t => we.filter(e=>e.typ===t).reduce((s,e)=>s+workdays(e.data_od,e.data_do),0));
+    const sum = counts.reduce((a,b)=>a+b,0);
+    return `<tr>
+      <td><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:3px;background:${wColor(w.nazwa)};flex-shrink:0"></span>${w.nazwa}</span></td>
+      ${counts.map(c=>`<td>${c||'–'}</td>`).join('')}
+      <td><strong>${sum}</strong></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="summary-metrics">
+      <div class="metric"><div class="metric-label">Wszystkich wpisów</div><div class="metric-val">${entries.length}</div></div>
+      <div class="metric"><div class="metric-label">Łączne dni</div><div class="metric-val">${totalDays}</div></div>
+      <div class="metric"><div class="metric-label">W tym miesiącu</div><div class="metric-val">${thisMonth.length}</div></div>
+      <div class="metric"><div class="metric-label">Pracownicy</div><div class="metric-val">${workers.length}</div></div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table>
+        <thead><tr><th>Pracownik</th><th>Wypoczynkowy</th><th>Na żądanie</th><th>Chorobowy</th><th>Opieka</th><th>Łącznie</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── WORKERS ──
+function renderWorkers() {
+  const chips = workers.map((w, i) =>
+    `<span class="worker-chip wc${i%8}">${w.nazwa}<button onclick="removeWorker(${w.id},'${w.nazwa.replace(/'/g,"\\'")}')">×</button></span>`
+  ).join('');
+  document.getElementById('mainContent').innerHTML = `
+    <div class="card">
+      <div class="card-title">Zespół ON-ARCH</div>
+      <div class="worker-chips" id="workerChips">${chips || '<span style="color:var(--text-muted);font-size:13px">Brak pracowników — dodaj pierwszego poniżej</span>'}</div>
+      <div class="add-row">
+        <div class="form-group" style="flex:1;margin:0">
+          <input type="text" id="newWorker" placeholder="Imię i nazwisko…" onkeydown="if(event.key==='Enter')addWorker()" style="padding:9px 12px;border:0.5px solid var(--border);border-radius:9px;font-family:Lato,sans-serif;font-size:13px;background:var(--bg);color:var(--text);width:100%;outline:none"/>
+        </div>
+        <button class="btn-brand" onclick="addWorker()">Dodaj</button>
+      </div>
+    </div>`;
+}
+
+async function addWorker() {
+  const name = document.getElementById('newWorker').value.trim();
+  if (!name || workers.find(w => w.nazwa === name)) return;
+  const { error } = await sb.from('urlopy_pracownicy').insert({ nazwa: name });
+  if (error) { toast('Błąd: ' + error.message); return; }
+  await loadWorkers();
+  toast(`Dodano: ${name}`);
+  renderWorkers();
+}
+
+async function removeWorker(id, name) {
+  if (!confirm(`Usunąć ${name}?`)) return;
+  await sb.from('urlopy_pracownicy').delete().eq('id', id);
+  await loadWorkers();
+  toast(`Usunięto: ${name}`);
+  renderWorkers();
+}
+
+// ── BOOTSTRAP ──
+if (sessionStorage.getItem('oa_auth') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  init();
+}
+</script>
+</body>
+</html>
