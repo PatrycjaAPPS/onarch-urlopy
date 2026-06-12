@@ -486,6 +486,23 @@
       .mobile-nav-item.active { color: var(--brand-dark); }
     }
     @media (min-width: 769px) { .mobile-nav { display: none !important; } }
+
+    /* ── YEAR TABS ── */
+    .year-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .year-tab {
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 0.5px solid var(--border);
+      background: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .year-tab:hover { border-color: var(--brand-mid); color: var(--text); }
+    .year-tab.active { background: var(--brand-dark); color: white; border-color: var(--brand-dark); }
   </style>
 </head>
 <body>
@@ -546,6 +563,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M17 11l2 2 4-4" stroke-width="1.8"/></svg>
         Pracownicy
       </button>
+      <button class="nav-item" onclick="showPage('archive')" id="nav-archive">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        Archiwum
+      </button>
     </nav>
     <div class="sidebar-footer">
       <button class="logout-btn" onclick="doLogout()">
@@ -584,6 +605,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
       Pracownicy
     </button>
+    <button class="mobile-nav-item" onclick="showPage('archive')" id="mnav-archive">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      Archiwum
+    </button>
   </nav>
 </div>
 
@@ -606,6 +631,7 @@ let entries = [];
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let currentPage = 'calendar';
+const CURRENT_YEAR = new Date().getFullYear();
 
 // ── AUTH ──
 function doLogin() {
@@ -637,7 +663,10 @@ async function loadWorkers() {
   workers = data || [];
 }
 async function loadEntries() {
-  const { data } = await sb.from('urlopy_wpisy').select('*').order('data_od');
+  const { data } = await sb.from('urlopy_wpisy').select('*')
+    .gte('data_od', CURRENT_YEAR + '-01-01')
+    .lte('data_od', CURRENT_YEAR + '-12-31')
+    .order('data_od');
   entries = data || [];
 }
 
@@ -652,16 +681,16 @@ function toast(msg) {
 // ── NAVIGATION ──
 function showPage(page) {
   currentPage = page;
-  const titles = { calendar: 'Kalendarz urlopów', add: 'Dodaj urlop', list: 'Lista urlopów', summary: 'Podsumowanie', workers: 'Pracownicy' };
+  const titles = { calendar: 'Kalendarz urlopów', add: 'Dodaj urlop', list: 'Lista urlopów', summary: 'Podsumowanie', workers: 'Pracownicy', archive: 'Archiwum' };
   document.getElementById('pageTitle').textContent = titles[page];
   document.getElementById('headerActions').innerHTML = page === 'list'
     ? `<button class="btn-ghost" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Eksport CSV</button>`
     : '';
-  ['calendar','add','list','summary','workers'].forEach(p => {
+  ['calendar','add','list','summary','workers','archive'].forEach(p => {
     document.getElementById('nav-'+p)?.classList.toggle('active', p === page);
     document.getElementById('mnav-'+p)?.classList.toggle('active', p === page);
   });
-  const pages = { calendar: renderCalendar, add: renderAdd, list: renderList, summary: renderSummary, workers: renderWorkers };
+  const pages = { calendar: renderCalendar, add: renderAdd, list: renderList, summary: renderSummary, workers: renderWorkers, archive: renderArchive };
   pages[page]();
 }
 
@@ -912,6 +941,87 @@ async function removeWorker(id, name) {
   await loadWorkers();
   toast(`Usunięto: ${name}`);
   renderWorkers();
+}
+
+
+// ── ARCHIVE ──
+async function renderArchive() {
+  document.getElementById('mainContent').innerHTML = '<div class="loader"><div class="spinner"></div>Ładowanie archiwum…</div>';
+  const { data } = await sb.from('urlopy_wpisy').select('*').order('data_od');
+  const all = data || [];
+
+  const years = [...new Set(all.map(e => e.data_od.slice(0,4)))].sort().reverse();
+  const currentYearStr = String(CURRENT_YEAR);
+  const archiveYears = years.filter(y => y !== currentYearStr);
+
+  if (!archiveYears.length) {
+    document.getElementById('mainContent').innerHTML = `
+      <div class="card" style="text-align:center;padding:40px">
+        <div style="font-size:32px;margin-bottom:12px">📂</div>
+        <div style="color:var(--text-muted);font-size:14px">Archiwum jest puste — poprzednie lata pojawią się tu automatycznie po 1 stycznia.</div>
+      </div>`;
+    return;
+  }
+
+  const selectedYear = archiveYears[0];
+  renderArchiveYear(all, archiveYears, selectedYear);
+}
+
+function renderArchiveYear(all, years, selectedYear) {
+  const yearEntries = all.filter(e => e.data_od.slice(0,4) === selectedYear);
+  const totalDays = yearEntries.reduce((s,e) => s + workdays(e.data_od, e.data_do), 0);
+
+  const yearTabs = years.map(y =>
+    `<button onclick="renderArchiveYearSwitch('${y}')" class="year-tab${y===selectedYear?' active':''}">${y}</button>`
+  ).join('');
+
+  const rows = workers.map(w => {
+    const we = yearEntries.filter(e => e.pracownik === w.nazwa);
+    const counts = TYPES.map(t => we.filter(e=>e.typ===t).reduce((s,e)=>s+workdays(e.data_od,e.data_do),0));
+    const sum = counts.reduce((a,b)=>a+b,0);
+    return `<tr>
+      <td><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:3px;background:${wColor(w.nazwa)};flex-shrink:0"></span>${w.nazwa}</span></td>
+      ${counts.map(c=>`<td>${c > 0 ? c : '–'}</td>`).join('')}
+      <td><strong>${sum}</strong></td>
+    </tr>`;
+  }).join('');
+
+  const listRows = yearEntries.map(e => {
+    const days = workdays(e.data_od, e.data_do);
+    return `<div class="entry-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:3px;background:${wColor(e.pracownik)};flex-shrink:0;display:inline-block"></span>
+        <div>
+          <div class="entry-name">${e.pracownik}</div>
+          <div class="entry-meta">${fmt(e.data_od)} – ${fmt(e.data_do)} · ${days} ${days===1?'dzień':'dni'} roboczych</div>
+        </div>
+      </div>
+      <span class="entry-type">${e.typ}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="year-tabs">${yearTabs}</div>
+    <div class="summary-metrics">
+      <div class="metric"><div class="metric-label">Wpisów w ${selectedYear}</div><div class="metric-val">${yearEntries.length}</div></div>
+      <div class="metric"><div class="metric-label">Łączne dni</div><div class="metric-val">${totalDays}</div></div>
+      <div class="metric"><div class="metric-label">Pracownicy</div><div class="metric-val">${workers.length}</div></div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+      <table>
+        <thead><tr><th>Pracownik</th><th>Wypoczynkowy</th><th>Na żądanie</th><th>Chorobowy</th><th>Opieka</th><th>Wyjazd</th><th>Łącznie</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Brak danych</td></tr>'}</tbody>
+      </table>
+    </div>
+    <div class="card" style="padding:8px 20px" id="archiveList">${listRows || '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">Brak wpisów</div>'}</div>`;
+
+  window._archiveAll = all;
+  window._archiveYears = years;
+}
+
+async function renderArchiveYearSwitch(year) {
+  if (!window._archiveAll) { await renderArchive(); return; }
+  renderArchiveYear(window._archiveAll, window._archiveYears, year);
 }
 
 // ── BOOTSTRAP ──
