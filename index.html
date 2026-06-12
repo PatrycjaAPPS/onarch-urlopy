@@ -858,7 +858,7 @@ function renderSummary() {
     const sum = counts.reduce((a,b)=>a+b,0);
     return `<tr>
       <td><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:3px;background:${wColor(w.nazwa)};flex-shrink:0"></span>${w.nazwa}</span></td>
-      ${counts.map(c=>`<td>${c||'–'}</td>`).join('')}
+      ${counts.map(c=>`<td>${c > 0 ? c : '–'}</td>`).join('')}
       <td><strong>${sum}</strong></td>
     </tr>`;
   }).join('');
